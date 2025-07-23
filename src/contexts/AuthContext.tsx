@@ -30,58 +30,98 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast()
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+    const getSessionAndProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id)
+        await fetchProfile(session.user.id);
       } else {
-        setLoading(false)
+        setLoading(false);
       }
-    })
+    };
 
-    // Listen for auth changes
+    getSessionAndProfile();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
+        setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id)
+          await fetchProfile(session.user.id);
         } else {
-          setProfile(null)
-          setLoading(false)
+          setProfile(null);
+          setLoading(false);
         }
       }
-    )
+    );
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
-      // First try to get from auth.users metadata, fallback to profiles table
-      const { data: userData } = await supabase.auth.getUser()
+      // Tenta buscar da tabela users
+      const { data, error, status } = await supabase
+        .from("users")
+        .select(`*`)
+        .eq("id", userId)
+        .single();
+
+      if (data) {
+        // Mapeia os dados da tabela users para o formato Profile
+        const userProfile: Profile = {
+          id: data.id,
+          email: data.email || "",
+          name: data.name || data.email?.split("@")[0] || "Usuário",
+          age: data.age || 25,
+          city: data.city || "São Paulo",
+          favorite_sport: data.favorite_sport || "futebol",
+          avatar_url: data.avatar_url,
+          is_premium: data.is_premium || false,
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: data.updated_at || new Date().toISOString(),
+        };
+        setProfile(userProfile);
+      } else {
+        // Se não encontrar, cria um perfil mock dos dados de auth
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const mockProfile: Profile = {
+            id: userData.user.id,
+            email: userData.user.email || "",
+            name: userData.user.user_metadata?.name || userData.user.email?.split("@")[0] || "Usuário",
+            age: userData.user.user_metadata?.age || 25,
+            city: userData.user.user_metadata?.city || "São Paulo",
+            favorite_sport: userData.user.user_metadata?.favorite_sport || "futebol",
+            avatar_url: userData.user.user_metadata?.avatar_url,
+            is_premium: userData.user.user_metadata?.is_premium || false,
+            created_at: userData.user.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setProfile(mockProfile);
+        }
+      }
+    } catch (error: any) {
+      // Em caso de erro, cria um perfil mock
+      const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
-        // Create a mock profile from auth data
         const mockProfile: Profile = {
           id: userData.user.id,
-          email: userData.user.email || '',
-          name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || 'Usuário',
+          email: userData.user.email || "",
+          name: userData.user.user_metadata?.name || userData.user.email?.split("@")[0] || "Usuário",
           age: userData.user.user_metadata?.age || 25,
-          city: userData.user.user_metadata?.city || 'São Paulo',
-          favorite_sport: userData.user.user_metadata?.favorite_sport || 'futebol',
+          city: userData.user.user_metadata?.city || "São Paulo",
+          favorite_sport: userData.user.user_metadata?.favorite_sport || "futebol",
           avatar_url: userData.user.user_metadata?.avatar_url,
           is_premium: userData.user.user_metadata?.is_premium || false,
           created_at: userData.user.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        setProfile(mockProfile)
+          updated_at: new Date().toISOString(),
+        };
+        setProfile(mockProfile);
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error)
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -103,7 +143,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     })
 
-    return { error }
+    if (error) return { error }
+
+    // Tenta inserir na tabela users, mas não falha se não conseguir
+    if (data.user) {
+      try {
+        await supabase.from("users").insert({
+          id: data.user.id,
+          email: data.user.email,
+          name: userData.name || data.user.email?.split("@")[0] || "Usuário",
+          age: userData.age || 25,
+          city: userData.city || "São Paulo",
+          favorite_sport: userData.favorite_sport || "futebol",
+          avatar_url: userData.avatar_url || null,
+          is_premium: false,
+        });
+      } catch (profileError) {
+        // Ignora erros de inserção no perfil
+        console.log("User insertion failed, but signup succeeded:", profileError);
+      }
+    }
+
+    return { error: null }
   }
 
   const signOut = async () => {

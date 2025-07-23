@@ -129,16 +129,31 @@ const CreateEvent = () => {
         .select()
         .single()
 
-      if (eventError) throw eventError
+      if (eventError) {
+        // Se a tabela não existir, mostra uma mensagem específica
+        if (eventError.code === '42P01') {
+          toast({
+            title: "Configuração necessária",
+            description: "As tabelas do banco de dados precisam ser configuradas. Execute o script SQL fornecido no seu projeto Supabase.",
+            variant: "destructive"
+          })
+          return
+        }
+        throw eventError
+      }
 
       // Upload banner if provided
       if (bannerFile && eventResult) {
-        const bannerUrl = await uploadBanner(bannerFile, eventResult.id)
-        if (bannerUrl) {
-          await supabase
-            .from('events')
-            .update({ banner_url: bannerUrl })
-            .eq('id', eventResult.id)
+        try {
+          const bannerUrl = await uploadBanner(bannerFile, eventResult.id)
+          if (bannerUrl) {
+            await supabase
+              .from('events')
+              .update({ banner_url: bannerUrl })
+              .eq('id', eventResult.id)
+          }
+        } catch (uploadError) {
+          console.log("Banner upload failed, but event was created:", uploadError)
         }
       }
 
@@ -147,12 +162,17 @@ const CreateEvent = () => {
         description: "Seu evento foi criado com sucesso.",
       })
 
-      navigate(`/event/${eventResult.id}`)
-    } catch (error) {
+      // Redireciona para a home se não conseguir ir para o evento específico
+      try {
+        navigate(`/event/${eventResult.id}`)
+      } catch {
+        navigate('/')
+      }
+    } catch (error: any) {
       console.error('Error creating event:', error)
       toast({
         title: "Erro",
-        description: "Não foi possível criar o evento. Tente novamente.",
+        description: error.message || "Não foi possível criar o evento. Tente novamente.",
         variant: "destructive"
       })
     } finally {
