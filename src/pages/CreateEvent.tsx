@@ -41,9 +41,8 @@ const CreateEvent = () => {
     'caminhada', 'corrida', 'tenis', 'natacao', 'outros'
   ]
 
-  // Check user's monthly event count
+  // Remove monthly event count restriction
   const [monthlyEventCount, setMonthlyEventCount] = useState(0)
-  const [canCreateEvent, setCanCreateEvent] = useState(true)
 
   useEffect(() => {
     checkMonthlyEventLimit()
@@ -52,55 +51,13 @@ const CreateEvent = () => {
   const checkMonthlyEventLimit = async () => {
     if (!profile) return
 
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
-
     try {
       // Mock count since we don't have events table yet
       const eventCount = 0 // This would be a real query in production
       setMonthlyEventCount(eventCount)
-      
-      const limit = profile.is_premium ? 999 : 10
-      setCanCreateEvent(eventCount < limit)
     } catch (error) {
       console.error('Error checking event limit:', error)
     }
-  }
-
-  if (!canCreateEvent && !profile?.is_premium) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="flex items-center"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-        </div>
-
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-destructive rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-destructive-foreground" />
-            </div>
-            <h2 className="text-xl font-bold mb-2">Limite Atingido</h2>
-            <p className="text-muted-foreground mb-6">
-              Você atingiu o limite de 10 eventos por mês para usuários gratuitos. 
-              Faça upgrade para Premium e crie eventos ilimitados!
-            </p>
-            <Button className="w-full bg-gradient-primary hover:opacity-90 shadow-glow">
-              <Star className="w-4 h-4 mr-2" />
-              Upgrade para Premium
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,10 +181,7 @@ const CreateEvent = () => {
           <div>
             <h1 className="text-2xl font-bold">Criar Evento</h1>
             <p className="text-muted-foreground">
-              {profile?.is_premium 
-                ? 'Organize um evento esportivo na sua cidade' 
-                : `${monthlyEventCount}/10 eventos criados este mês`
-              }
+              Organize um evento esportivo na sua cidade
             </p>
           </div>
       </div>
