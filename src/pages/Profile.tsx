@@ -64,41 +64,30 @@ const Profile = () => {
 
     setLoading(true)
     try {
-      // Load upcoming events where user is participating
-      const { data: eventsData } = await supabase
-        .from('event_participants')
-        .select(`
-          events (
-            id,
-            name,
-            date,
-            time,
-            location,
-            sport_type,
-            banner_url
-          )
-        `)
-        .eq('user_id', profile.id)
-        .gte('events.date', new Date().toISOString().split('T')[0])
+      // Set mock data for upcoming events (since we don't have real Supabase tables)
+      const mockEvents: Event[] = [
+        {
+          id: '1',
+          name: 'Futebol no Parque',
+          date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          time: '15:00',
+          location: 'Parque do Ibirapuera',
+          sport_type: 'futebol',
+          banner_url: null,
+          description: 'Jogo amistoso',
+          latitude: -23.5505,
+          longitude: -46.6333,
+          max_participants: 20,
+          creator_id: profile.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+      setUpcomingEvents(mockEvents)
 
-      if (eventsData) {
-        const events = eventsData
-          .map(item => item.events)
-          .filter(Boolean) as any[]
-        setUpcomingEvents(events)
-      }
-
-      // Load user's event photos
-      const { data: photosData } = await supabase
-        .from('event_photos')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(12)
-
-      if (photosData) {
-        setEventPhotos(photosData)
-      }
+      // Set mock event photos
+      const mockPhotos: EventPhoto[] = []
+      setEventPhotos(mockPhotos)
     } catch (error) {
       console.error('Error loading user data:', error)
     } finally {
