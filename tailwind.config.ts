@@ -61,7 +61,26 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Sport category colors
+				sport: {
+					football: 'hsl(var(--sport-football))',
+					basketball: 'hsl(var(--sport-basketball))',
+					volleyball: 'hsl(var(--sport-volleyball))',
+					cycling: 'hsl(var(--sport-cycling))',
+					running: 'hsl(var(--sport-running))'
 				}
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-surface': 'var(--gradient-surface)'
+			},
+			boxShadow: {
+				'sm': 'var(--shadow-sm)',
+				'md': 'var(--shadow-md)',
+				'lg': 'var(--shadow-lg)',
+				'glow': 'var(--shadow-glow)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
