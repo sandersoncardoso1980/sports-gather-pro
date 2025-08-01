@@ -116,11 +116,7 @@ const Auth = () => {
       registerData.email, 
       registerData.password, 
       {
-        name: registerData.name,
-        age: parseInt(registerData.age),
-        city: registerData.city,
-        favorite_sport: registerData.favorite_sport,
-        avatar_url: avatarUrl
+        name: registerData.name
       }
     )
     
